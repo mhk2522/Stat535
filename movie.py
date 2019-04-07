@@ -35,6 +35,9 @@ ratings_count=pd.DataFrame(allData.groupby('movieID',  as_index=False)['rating']
 ratings_count.rename(index=str, columns={'movieID':'movieID','rating':'count'}, inplace=True)
 ratings_count.head()
 ratings_count['count'].hist(bins=30)
+
+plt.hist(allData['rating'], color = 'blue', edgecolor = 'black', bins = 10)
+
 moviesfin=pd.merge(ratings_count, avgratings, on='movieID')
 moviesfin.head()
 matrix_A=pd.DataFrame(allData.pivot_table(index="movieID", columns="userID", values='rating'))
