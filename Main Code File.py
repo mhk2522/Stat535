@@ -45,4 +45,4 @@ matrix_A=matrix_A.fillna(0)
 matrix_A.head()
 matrix_B=pd.DataFrame(allData.pivot_table(index="userID", columns="movieID", values='rating'))
 matrix_B.head()
-item_similarity = pairwise_distances(matrix_A, metric='cosine')
+#item_similarity = pairwise_distances(matrix_A, metric='cosine') Produces a 1465X1465 matrix need to get it to do the entire matrix
