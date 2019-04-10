@@ -15,7 +15,7 @@ import sklearn.model_selection as model_selection
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
-
+from sklearn.metrics.pairwise import pairwise_distances 
 from sklearn.model_selection import cross_val_predict, cross_validate
 from sklearn import linear_model
 from sklearn import neighbors
@@ -41,4 +41,8 @@ plt.hist(allData['rating'], color = 'blue', edgecolor = 'black', bins = 10)
 moviesfin=pd.merge(ratings_count, avgratings, on='movieID')
 moviesfin.head()
 matrix_A=pd.DataFrame(allData.pivot_table(index="movieID", columns="userID", values='rating'))
-matrix_A
+matrix_A=matrix_A.fillna(0)
+matrix_A.head()
+matrix_B=pd.DataFrame(allData.pivot_table(index="userID", columns="movieID", values='rating'))
+matrix_B.head()
+item_similarity = pairwise_distances(matrix_A, metric='cosine')
