@@ -53,7 +53,7 @@ df_movie_matrix = allData.pivot(
     index='userID',
     columns='movieID',
     values='rating'
-).fillna(0)
+)
 # convert dataframe of movie features to scipy sparse matrix
 mat_movie_matrix = csr_matrix(df_movie_matrix.values)
 df_movie_matrix
