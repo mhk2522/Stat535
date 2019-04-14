@@ -59,5 +59,8 @@ mat_movie_matrix = csr_matrix(df_movie_matrix.values)
 df_movie_matrix
 print(mat_movie_matrix[3,:])
 
-
+for i in range(1465):
+    for n in range(2353):
+        if mat_movie_matrix[n,i] > 0:
+            print(mat_movie_matrix[n,i])
 
