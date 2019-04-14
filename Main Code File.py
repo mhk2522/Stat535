@@ -45,4 +45,19 @@ matrix_A=matrix_A.fillna(0)
 matrix_A.head()
 matrix_B=pd.DataFrame(allData.pivot_table(index="userID", columns="movieID", values='rating'))
 matrix_B.head()
-#item_similarity = pairwise_distances(matrix_A, metric='cosine') Produces a 1465X1465 matrix need to get it to do the entire matrix
+
+
+from scipy.sparse import csr_matrix
+# pivot ratings into movie features
+df_movie_matrix = allData.pivot(
+    index='userID',
+    columns='movieID',
+    values='rating'
+).fillna(0)
+# convert dataframe of movie features to scipy sparse matrix
+mat_movie_matrix = csr_matrix(df_movie_matrix.values)
+df_movie_matrix
+print(mat_movie_matrix[3,:])
+
+
+
