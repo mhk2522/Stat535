@@ -55,12 +55,24 @@ df_movie_matrix = allData.pivot(
     values='rating'
 )
 # convert dataframe of movie features to scipy sparse matrix
-mat_movie_matrix = csr_matrix(df_movie_matrix.values)
-df_movie_matrix
-print(mat_movie_matrix[3,:])
+mat_movie_matrix = np.array(df_movie_matrix.values)
+random.seed(1)
+def rate_predict(R,p,q,k,lamb, gamma):
+    
+    for i in range(len(R)):
+        for j in range(len(R[0])):
+            if R[i,j]>0:
+                q_t=np.transpose(q)
+                error=R[i,j]-np.dot(p[i,:],q_t[:,j])
+                for l in range(k):
+                    q[j,l]=q[j,l]+gamma*(error*p[i,l]-lamb*q[j,l])
+                    p[i,l]=p[i,l]+gamma*(error*q[j,l]-lamb*(p[i,l]))
+                    
+    return p,q_t
+P=np.random.rand(len(mat_movie_matrix),2)
+Q=np.random.rand(len(mat_movie_matrix[0,:]),2)
+beta=rate_predict(mat_movie_matrix,P,Q,2,0,0.1)
+Answer=np.dot(beta[0],beta[1])
 
-for i in range(1465):
-    for n in range(2353):
-        if mat_movie_matrix[n,i] > 0:
-            print(mat_movie_matrix[n,i])
+
 
