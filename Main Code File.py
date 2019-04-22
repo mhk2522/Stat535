@@ -47,66 +47,107 @@ matrix_B=pd.DataFrame(allData.pivot_table(index="userID", columns="movieID", val
 matrix_B.head()
 
 
-from scipy.sparse import csr_matrix
-# pivot ratings into movie features
-df_movie_matrix = allData.pivot(
-    index='userID',
-    columns='movieID',
-    values='rating'
-)
-# convert dataframe of movie features to scipy sparse matrix
-mat_movie_matrix = np.array(df_movie_matrix.values)
-random.seed(1)
-def rate_predict(R,p,q,k,lamb, gamma):
-    
-    for i in range(len(R)):
-        for j in range(len(R[0])):
-            if R[i,j]>0:
-                q_t=np.transpose(q)
-                error=R[i,j]-np.dot(p[i,:],q_t[:,j])
-                for l in range(k):
-                    q[j,l]=q[j,l]+gamma*(error*p[i,l]-lamb*q[j,l])
-                    p[i,l]=p[i,l]+gamma*(error*q[j,l]-lamb*(p[i,l]))
-                    
-    return p,q_t
-P=np.random.rand(len(mat_movie_matrix),2)
-Q=np.random.rand(len(mat_movie_matrix[0,:]),2)
-beta=rate_predict(mat_movie_matrix,P,Q,2,0,0.1)
-Answer=np.dot(beta[0],beta[1])
+def get_mu(mat):
+    ''' Gets the overall average movie rating'''
+    mu = mat.loc[:,"rating"].mean()
+    return mu
 
-def rating_error(r, q, p):
-    return r - np.dot(q,p)
+def get_movie_mean(i,mu,mat):
+    '''Gets the average rating of movie index i and then subtracts mu'''
+    movloc = mat.loc[i]["movieID"]
+    mov = mat[mat['movieID']==movloc]
+    movmean=mov.mean()
+    return movmean['rating']-mu
+
+def get_user_mean(u,mu, mat):
+    '''Gets the average rating of user index u and then subtracts mu'''
+    userloc = mat.loc[u]["userID"]
+    user = mat[mat['userID']==userloc]
+    usermean=user.mean()
+    return usermean['rating']-mu
+
+def get_bias(u,i, mat,mu):   
+    ''' Returns the bias of movie i and user j'''
+    bui= mu+get_user_mean(u,mu, mat)+get_movie_mean(i,mu,mat)
+    return bui
+
+def rating_error(r, q, p,u,i,mu,mat):
+    return r - get_bias(u,i,mat,mu)-np.dot(q,p)
 
 def update_q(q, e, p, gam, lam):
     return q + gam * (e * p - lam * q)
 
 def update_p(q, e, p, gam, lam):
-    return p + gam * (e * q - lam * p)
+    return p + gam * (e * q - lam * p) 
 
-def rating_sgd(ratings, gam, lam, userID, movieID):
+def get_bias_row(u_id,mat):
+    mu=get_mu(mat)
+    r_bias=np.zeros((1,1465))
+    u = mat[mat["userID"]==u_id].index[0]
+    for i in range(1465):
+            r_bias[0,i]= get_bias(u,i, mat,mu)
+    return r_bias
+
+def get_rating(mat,latentmat, u_id, i_id):
+    mu=get_mu(mat)
+    u = mat[mat["userID"]==u_id].index[0]
+    i= mat[mat["movieID"]==i_id].index[0]
+    r_bias=get_bias(u,i,mat,mu)
+    qpiu=latentmat[i,u]
+    return r_bias+qpiu
+
+def get_rating_row(mat,latentmat, u_id):
+    u = mat[mat["userID"]==u_id].index[0]
+    r_bias=get_bias_row(u_id, mat)
+    qpui=np.transpose(latentmat[:,u])
+    return r_bias+qpui
+
+def get_top10(row,movies):
+    e=np.argsort(row)
+    f=[e[0,1455],e[0,1456],e[0,1457],e[0,1458],e[0,1459],e[0,1460],e[0,1461],e[0,1462],e[0,1463],e[0,1464]]
+    g=[]
+    h=[]
+    for i in range(10):
+        g.append(movies.loc[f[i]]["movieID"])
+    for i in range(10):
+       c=movies[movies["movieID"]==g[i]].iloc[0]["name"]
+       h.append(c)
+    return h
+            
+def rating_sgd(mat, gam, lam, userID, movieID):
     p = np.ones((4, 2353))*0.1
     q = np.ones((4, 1465))*0.1
+    mu = get_mu(mat)
     
-    for s in range(50000):
+    for s in range(10):
         idx = np.random.choice(len(ratings))
-        r = int(ratings[['rating']].iloc[idx])
-        u_id = int(ratings[['userID']].iloc[idx])
-        i_id = int(ratings[['movieID']].iloc[idx])
+        r = int(mat[['rating']].iloc[idx])
+        u_id = int(mat[['userID']].iloc[idx])
+        i_id = int(mat[['movieID']].iloc[idx])
         
         u = userID[userID==u_id].index[0]
         i = movieID[movieID==i_id].index[0]
-        
-        e = rating_error(r, q[:,i], p[:,u])
-        q[:,i] = update_q(q[:,i], e, p[:,u], gam, lam)
-        p[:,u] = update_p(q[:,i], e, p[:,u], gam, lam)
-        
+
+        e = rating_error(r, q[:,i], p[:,u],u_id,i_id,mu,mat)
+        # updates p and q till error is <0.01
+        while(e>=0.01):
+            q[:,i] = update_q(q[:,i], e, p[:,u], gam, lam)
+            p[:,u] = update_p(q[:,i], e, p[:,u], gam, lam)
+            e = rating_error(r, q[:,i], p[:,u],u_id,i_id,mu,mat)
     return p,q
 
-def predict_rating(p, q):
-    return np.dot(np.transpose(q),p)
-        
+b=get_bias_row(747,ratings) 
+
+random.seed(1)
+
 a=rating_sgd(ratings, 0.1, 0, 
            users[['userID']].iloc[:,0], 
            movies[['movieID']].iloc[:,0])
-b=predict_rating(a[0],a[1])
 
+qtp = np.dot(np.transpose(a[1]),a[0])
+
+prediction=get_rating(ratings,qtp,747,1193)
+
+pred_row=get_rating_row(ratings,qtp,747)
+
+top10=get_top10(pred_row,movies)
