@@ -87,6 +87,7 @@ def get_bias_row(u_id,mat):
     for i in range(1465):
             r_bias[0,i]= get_bias(u,i, mat,mu)
     return r_bias
+
 def get_rating(mat,latentmat, u_id, i_id):
     mu=get_mu(mat)
     u = mat[mat["userID"]==u_id].index[0]
@@ -94,25 +95,25 @@ def get_rating(mat,latentmat, u_id, i_id):
     r_bias=get_bias(u,i,mat,mu)
     qpiu=latentmat[i,u]
     return r_bias+qpiu
+
 def get_rating_row(mat,latentmat, u_id):
     u = mat[mat["userID"]==u_id].index[0]
     r_bias=get_bias_row(u_id, mat)
     qpui=np.transpose(latentmat[:,u])
     return r_bias+qpui
-# get top 10 is buggy right now so ignore it
-#def get_top10(row,movies,mat):
-#    e=np.argsort(row)
-#    f=
-#    for i in range(10):
-#        c=f[0,i]
-#        movloc = mat.loc[c]["movieID"]
-#        mov = movies[movies['movieID']==movloc]
-#        mov1=mov['name']
-#        print((10-i),mov1)
-        
+
+def get_top10(row,movies):
+    e=np.argsort(row)
+    f=[e[0,1455],e[0,1456],e[0,1457],e[0,1458],e[0,1459],e[0,1460],e[0,1461],e[0,1462],e[0,1463],e[0,1464]]
+    g=[]
+    h=[]
+    for i in range(10):
+        g.append(movies.loc[f[i]]["movieID"])
+    for i in range(10):
+       c=movies[movies["movieID"]==g[i]].iloc[0]["name"]
+       h.append(c)
+    return h
             
-        
-        
 def rating_sgd(mat, gam, lam, userID, movieID):
     p = np.ones((4, 2353))*0.1
     q = np.ones((4, 1465))*0.1
@@ -134,11 +135,19 @@ def rating_sgd(mat, gam, lam, userID, movieID):
             p[:,u] = update_p(q[:,i], e, p[:,u], gam, lam)
             e = rating_error(r, q[:,i], p[:,u],u_id,i_id,mu,mat)
     return p,q
+
 b=get_bias_row(747,ratings) 
+
 random.seed(1)
+
 a=rating_sgd(ratings, 0.1, 0, 
            users[['userID']].iloc[:,0], 
            movies[['movieID']].iloc[:,0])
+
 qtp = np.dot(np.transpose(a[1]),a[0])
+
 prediction=get_rating(ratings,qtp,747,1193)
+
 pred_row=get_rating_row(ratings,qtp,747)
+
+top10=get_top10(pred_row,movies)
