@@ -120,6 +120,7 @@ def get_bias(u,i, mat,mu):
     bui= mu+get_user_mean(u,mu, mat)+get_movie_mean(i,mu,mat)
     return bui
 def user_avg_vector(mat,users):
+    ''' Returns the average ratings of a user'''
     mu=get_mu(mat)
     uss=np.zeros((1,2353))
     for u in range(2353):
@@ -130,6 +131,7 @@ def user_avg_vector(mat,users):
     return uss
 
 def movie_avg_vector(mat,movies):
+    ''' Returns the average ratings of a movie'''
     mu=get_mu(mat)
     movavg=np.zeros((1,1465))
     for i in range(1465):
@@ -140,6 +142,7 @@ def movie_avg_vector(mat,movies):
     return movavg
 
 def get_pred_matrix(qtp,mat,users,movies):
+    ''' Returns the prediction'''
     mu=get_mu(mat)
     movvec=np.transpose(movie_avg_vector(mat,movies))
     usevec=user_avg_vector(mat,users)
@@ -153,15 +156,19 @@ def get_pred_matrix(qtp,mat,users,movies):
     return pred
     
 def rating_error(r, q, p,u,i,mu,mat):
+    ''' Returns the error of a rating'''
     return r - get_bias(u,i,mat,mu)-np.dot(q,p)
 
 def update_q(q, e, p, gam, lam):
+    ''' Updates q'''
     return q + gam * (e * p - lam * q)
 
 def update_p(q, e, p, gam, lam):
+    ''' Updates p'''
     return p + gam * (e * q - lam * p) 
 
 def get_bias_row(u_id,mat):
+    ''' Returns the bias of a user''' 
     mu=get_mu(mat)
     r_bias=np.zeros((1,1465))
     u = mat[mat["userID"]==u_id].index[0]
@@ -169,6 +176,7 @@ def get_bias_row(u_id,mat):
             r_bias[0,i]= get_bias(u,i, mat,mu)
     return r_bias
 def get_rating(mat,latentmat, u_id, i_id):
+    ''' Returns the predicted rating'''
     mu=get_mu(mat)
     u = mat[mat["userID"]==u_id].index[0]
     i= mat[mat["movieID"]==i_id].index[0]
@@ -176,12 +184,14 @@ def get_rating(mat,latentmat, u_id, i_id):
     qpiu=latentmat[i,u]
     return r_bias+qpiu
 def get_rating_row(mat,latentmat, u_id):
+    ''' Returns the predictions for a user''' 
     u = mat[mat["userID"]==u_id].index[0]
     r_bias=get_bias_row(u_id, mat)
     qpui=np.transpose(latentmat[:,u])
     return r_bias+qpui
 
 def get_top10(row,movies):
+    ''' Returns the top 10 ratings for a user'''
     e=np.argsort(row)
     f=[e[0,1455],e[0,1456],e[0,1457],e[0,1458],e[0,1459],e[0,1460],e[0,1461],e[0,1462],e[0,1463],e[0,1464]]
     g=[]
@@ -194,6 +204,7 @@ def get_top10(row,movies):
     return h
             
 def rating_sgd(mat, gam, lam, userID, movieID):
+    ''' Runs Stochasitc Gradient Descent''' 
     p = np.ones((4, 2353))*0.1
     q = np.ones((4, 1465))*0.1
     mu = get_mu(mat)
