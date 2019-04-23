@@ -168,27 +168,22 @@ def update_p(q, e, p, gam, lam):
     return p + gam * (e * q - lam * p) 
 
 def get_bias_row(u_id,mat):
-    ''' Returns the bias of a user''' 
     mu=get_mu(mat)
-    r_bias=np.zeros((1,1465))
+    r_bias=np.zeros((1465,1))
     u = mat[mat["userID"]==u_id].index[0]
     for i in range(1465):
-            r_bias[0,i]= get_bias(u,i, mat,mu)
+            r_bias[i,0]= get_bias(u,i, mat,mu)
     return r_bias
-def get_rating(mat,latentmat, u_id, i_id):
-    ''' Returns the predicted rating'''
-    mu=get_mu(mat)
+def get_rating(mat,pred, u_id, i_id):
     u = mat[mat["userID"]==u_id].index[0]
     i= mat[mat["movieID"]==i_id].index[0]
-    r_bias=get_bias(u,i,mat,mu)
-    qpiu=latentmat[i,u]
-    return r_bias+qpiu
-def get_rating_row(mat,latentmat, u_id):
-    ''' Returns the predictions for a user''' 
+    return pred[i,u]
+   
+def get_rating_row(mat,pred, u_id):
+    p = np.transpose(pred)
     u = mat[mat["userID"]==u_id].index[0]
-    r_bias=get_bias_row(u_id, mat)
-    qpui=np.transpose(latentmat[:,u])
-    return r_bias+qpui
+    row=p[u,:]
+    return row
 
 def get_top10(row,movies):
     ''' Returns the top 10 ratings for a user'''
@@ -235,7 +230,7 @@ a=rating_sgd(ratings, 0.1, 0.05,
 
 qtp = np.dot(np.transpose(a[1]),a[0])
 
-prediction=get_rating(ratings,qtp,747,1193)
+prediction1=get_rating(ratings,qtp,747,1193)
 
 pred_row=get_rating_row(ratings,qtp,747)
 
